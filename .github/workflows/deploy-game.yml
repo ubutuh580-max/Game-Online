@@ -27,7 +27,21 @@ jobs:
           unzip -o assets.zip -d public
           unzip -o media.zip -d public
           echo "Isi folder public setelah extract:"
-          find public -maxdepth 2
+          find public -maxdepth 4
+          echo "----"
+          echo "Mencari index.html di manapun posisinya:"
+          find public -iname "index.html"
+
+      - name: Tentukan folder yang benar-benar berisi index.html
+        id: findroot
+        run: |
+          WEBROOT=$(dirname "$(find public -iname 'index.html' | head -n 1)")
+          if [ -z "$WEBROOT" ]; then
+            echo "index.html TIDAK KETEMU di manapun! Cek log step sebelumnya." >&2
+            exit 1
+          fi
+          echo "Ketemu index.html di: $WEBROOT"
+          echo "webroot=$WEBROOT" >> "$GITHUB_OUTPUT"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -35,7 +49,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: ${{ steps.findroot.outputs.webroot }}
 
       - name: Deploy to GitHub Pages
         id: deployment
