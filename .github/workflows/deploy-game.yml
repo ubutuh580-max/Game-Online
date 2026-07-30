@@ -20,28 +20,29 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Extract game files (game.zip + assets.zip + media.zip)
+      - name: Extract game.zip dan cari lokasi index.html
+        id: findroot
         run: |
           mkdir -p public
           unzip -o game.zip -d public
-          unzip -o assets.zip -d public
-          unzip -o media.zip -d public
-          echo "Isi folder public setelah extract:"
+          echo "Isi folder public setelah extract game.zip:"
           find public -maxdepth 4
           echo "----"
-          echo "Mencari index.html di manapun posisinya:"
-          find public -iname "index.html"
-
-      - name: Tentukan folder yang benar-benar berisi index.html
-        id: findroot
-        run: |
           WEBROOT=$(dirname "$(find public -iname 'index.html' | head -n 1)")
           if [ -z "$WEBROOT" ]; then
-            echo "index.html TIDAK KETEMU di manapun! Cek log step sebelumnya." >&2
+            echo "index.html TIDAK KETEMU di dalam game.zip! Cek log di atas." >&2
             exit 1
           fi
           echo "Ketemu index.html di: $WEBROOT"
           echo "webroot=$WEBROOT" >> "$GITHUB_OUTPUT"
+
+      - name: Extract assets.zip dan media.zip LANGSUNG ke folder index.html
+        run: |
+          WEBROOT="${{ steps.findroot.outputs.webroot }}"
+          unzip -o assets.zip -d "$WEBROOT"
+          unzip -o media.zip -d "$WEBROOT"
+          echo "Isi folder webroot setelah semua diextract:"
+          find "$WEBROOT" -maxdepth 2
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
